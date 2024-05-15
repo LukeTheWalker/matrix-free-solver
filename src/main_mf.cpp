@@ -15,6 +15,8 @@ void solve_problem(unsigned int initial_refinements = 5);
  * It writes the convergence table both to the /output/convergence_mf.csv file and to the standard output.
  */
 void convergence_study();
+void dimension_time_study();
+
 
 int main(int argc, char *argv[])
 {
@@ -30,6 +32,8 @@ int main(int argc, char *argv[])
       solve_problem(atoi(argv[2]));
     else if (argc == 2 && std::string(argv[1]) == "convergence")
       convergence_study();
+    else if (std::string(argv[1]) == "dimension")
+      dimension_time_study();
     else
     {
       if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
@@ -130,5 +134,37 @@ void convergence_study()
     table.set_precision("H1", 6);
     table.write_text(std::cout);
     convergence_file.close();
+  }
+}
+
+void dimension_time_study()
+{
+  std::ofstream dimension_time_file;
+
+  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  {
+    dimension_time_file.open("./output_mf/dimension_time_mf.csv");
+    dimension_time_file << "n_dofs,steup+assemble,solve" << std::endl;
+  }
+
+  for (unsigned int refinements = 3; refinements < 4; ++refinements)
+  {
+    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      std::cout << "Starting with " << refinements << " initial refinements...\n";
+
+    DTRProblem<dim> problem(dimension_time_file, false);
+    problem.run(refinements);
+
+    if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    {
+      std::cout << "\tFE degree:       " << problem.get_fe_degree() << std::endl;
+      std::cout << "\tNumber of cells: " << problem.get_cells() << std::endl;
+      std::cout << "\tNumber of dofs:  " << problem.get_dofs() << std::endl;
+    }
+  }
+
+  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  {
+    dimension_time_file.close();
   }
 }
