@@ -1,6 +1,6 @@
 #include "DTR.hpp"
 
-const char bcs[4] = {'Z', 'N', 'Z', 'N'};
+const char bcs[4] = {'D', 'N', 'D', 'N'};
 
 void DTR::setup(unsigned int n_initial_refinements)
 {
@@ -289,19 +289,8 @@ void DTR::assemble()
 
     std::map<types::boundary_id, const Function<dim> *> boundary_functions;
 
-    for (unsigned int i = 0; i < 4; ++i)
-      if (bcs[i] == 'D')
-        boundary_functions[i] = &dirichletBC;
-
-    VectorTools::interpolate_boundary_values(dof_handler,
-                                             boundary_functions,
-                                             boundary_values);
-
-    boundary_functions.clear();
-    Functions::ZeroFunction<dim> zero_function(dim + 1);
-    for (unsigned int i = 0; i < 4; ++i)
-      if (bcs[i] == 'Z')
-        boundary_functions[i] = &zero_function;
+    boundary_functions[0] = &dirichletBC1;
+    boundary_functions[2] = &dirichletBC2;
 
     VectorTools::interpolate_boundary_values(dof_handler,
                                              boundary_functions,
