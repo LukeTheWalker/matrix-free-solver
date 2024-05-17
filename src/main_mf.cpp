@@ -101,20 +101,23 @@ void convergence_study()
       std::cout << "Starting with " << refinements - dim << " initial refinements...\n";
 
     DTRProblem<dim> problem(false);
-    problem.run(refinements);
+    problem.run(refinements, dim + 1);
 
     const double error_L2 = problem.compute_error(VectorTools::L2_norm);
     const double error_H1 = problem.compute_error(VectorTools::H1_norm);
 
-    table.add_value("cells", problem.get_cells());
+    unsigned int cells = problem.get_cells();
+    Utilities::MPI::sum<int>(cells, MPI_COMM_WORLD);
+
+    table.add_value("cells", cells);
     table.add_value("L2", error_L2);
     table.add_value("H1", error_H1);
 
     if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
-      convergence_file << problem.get_cells() << "," << error_L2 << "," << error_H1 << std::endl;
+      convergence_file << cells << "," << error_L2 << "," << error_H1 << std::endl;
       std::cout << "\tFE degree:       " << problem.get_fe_degree() << std::endl;
-      std::cout << "\tNumber of cells: " << problem.get_cells() << std::endl;
+      std::cout << "\tNumber of cells: " << cells << std::endl;
       std::cout << "\tNumber of dofs:  " << problem.get_dofs() << std::endl;
       std::cout << "\tL2 error:        " << error_L2 << std::endl;
       std::cout << "\tH1 error:        " << error_H1 << std::endl;
@@ -127,7 +130,6 @@ void convergence_study()
   {
     table.set_scientific("L2", true);
     table.set_scientific("H1", true);
-    table.set_precision("h", 6);
     table.set_precision("L2", 6);
     table.set_precision("H1", 6);
     table.write_text(std::cout);
