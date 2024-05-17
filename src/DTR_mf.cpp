@@ -285,7 +285,7 @@ namespace DTR_mf
       additional_data.mapping_update_flags =
           (update_values | update_gradients | update_JxW_values | update_quadrature_points);
       additional_data.mapping_update_flags_boundary_faces =
-          (update_values | update_gradients | update_JxW_values | update_quadrature_points);
+          (update_JxW_values | update_quadrature_points);
 
       std::shared_ptr<MatrixFree<dim, double>> system_mf_storage(new MatrixFree<dim, double>());
 
@@ -550,7 +550,7 @@ namespace DTR_mf
     constraints.distribute(solution);
 
     // Add the lifting to the solution to set the correct inhomogeneous Dirichlet BC
-    //! solution += lifting;
+    solution += lifting;
 
     pcout << "Time solve (" << solver_control.last_step() << " iterations)"
           << (solver_control.last_step() < 10 ? "  " : " ") << "(CPU/wall) "
@@ -579,7 +579,7 @@ namespace DTR_mf
     flags.compression_level = DataOutBase::CompressionLevel::best_speed;
     data_out.set_flags(flags);
     data_out.write_vtu_with_pvtu_record(
-        "./output_mf/", "solution", cycle, MPI_COMM_WORLD, 3);
+        output_dir, "solution", cycle, MPI_COMM_WORLD, 3);
 
     //time_details /*<< "Time write output"*/ << time.wall_time() << "s";
   }
@@ -607,6 +607,7 @@ namespace DTR_mf
 
     // must compute at least a solution
     Assert(n_cycles > dim, ExcMessage("The number of cycles must be at least dim + 1"));
+
 
     for (unsigned int cycle = 0; cycle < n_cycles - dim; ++cycle)
     {
