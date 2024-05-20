@@ -1,10 +1,10 @@
 #include "DTR.hpp"
 
-const char bcs[4] = {'Z', 'N', 'Z', 'N'};
-
-void DTR::setup()
+void DTR::setup(unsigned int n_initial_refinements)
 {
   pcout << "===============================================" << std::endl;
+  Timer time;
+  setup_time = 0;
 
   // Create the mesh.
   {
@@ -15,11 +15,8 @@ void DTR::setup()
     Triangulation<dim> mesh_serial;
 
     {
-      GridIn<dim> grid_in;
-      grid_in.attach_triangulation(mesh_serial);
-
-      std::ifstream grid_in_file(mesh_file_name);
-      grid_in.read_msh(grid_in_file);
+      GridGenerator::hyper_cube(mesh_serial, 0., 1., true);
+      mesh_serial.refine_global(n_initial_refinements - dim);
     }
 
     // Then, we copy the triangulation into the parallel one.
@@ -42,18 +39,18 @@ void DTR::setup()
   {
     pcout << "Initializing the finite element space" << std::endl;
 
-    fe = std::make_unique<FE_SimplexP<dim>>(r);
+    fe = std::make_unique<FE_Q<dim>>(r);
 
     pcout << "  Degree                     = " << fe->degree << std::endl;
     pcout << "  DoFs per cell              = " << fe->dofs_per_cell
           << std::endl;
 
-    quadrature = std::make_unique<QGaussSimplex<dim>>(r + 1);
+    quadrature = std::make_unique<QGauss<dim>>(r + 1);
 
     pcout << "  Quadrature points per cell = " << quadrature->size()
           << std::endl;
 
-    quadrature_boundary = std::make_unique<QGaussSimplex<dim - 1>>(r + 1);
+    quadrature_boundary = std::make_unique<QGauss<dim - 1>>(r + 1);
 
     pcout << "  Quadrature points per boundary cell = "
               << quadrature_boundary->size() << std::endl;
@@ -73,6 +70,8 @@ void DTR::setup()
     locally_owned_dofs = dof_handler.locally_owned_dofs();
 
     pcout << "  Number of DoFs = " << dof_handler.n_dofs() << std::endl;
+    time_details << dof_handler.n_dofs() << ',';
+
   }
 
   pcout << "-----------------------------------------------" << std::endl;
@@ -108,6 +107,9 @@ void DTR::setup()
     pcout << "  Initializing the solution vector" << std::endl;
     solution.reinit(locally_owned_dofs, MPI_COMM_WORLD);
   }
+
+  setup_time += time.wall_time();
+
 }
 
 void DTR::assemble()
@@ -116,6 +118,7 @@ void DTR::assemble()
 
   pcout << "  Assembling the linear system" << std::endl;
 
+  Timer time;
   // Number of local DoFs for each element.
   const unsigned int dofs_per_cell = fe->dofs_per_cell;
 
@@ -232,7 +235,7 @@ void DTR::assemble()
             // tag) is that of one of the Neumann boundaries, we assemble the
             // boundary integral.
             if (cell->face(face_number)->at_boundary() &&
-                bcs[cell->face(face_number)->boundary_id()] == 'N')
+                ((cell->face(face_number)->boundary_id() == 1) || cell->face(face_number)->boundary_id() == 3))
 
               {
                 fe_values_boundary.reinit(cell, face_number);
@@ -288,51 +291,54 @@ void DTR::assemble()
 
     std::map<types::boundary_id, const Function<dim> *> boundary_functions;
 
-    for (unsigned int i = 0; i < 4; ++i)
-      if (bcs[i] == 'D')
-        boundary_functions[i] = &dirichletBC;
+    boundary_functions[0] = &dirichletBC1;
+    boundary_functions[2] = &dirichletBC2;
 
     VectorTools::interpolate_boundary_values(dof_handler,
                                              boundary_functions,
                                              boundary_values);
 
-    boundary_functions.clear();
-    Functions::ZeroFunction<dim> zero_function(dim + 1);
-    for (unsigned int i = 0; i < 4; ++i)
-      if (bcs[i] == 'Z')
-        boundary_functions[i] = &zero_function;
-
-    VectorTools::interpolate_boundary_values(dof_handler,
-                                             boundary_functions,
-                                             boundary_values);
     // Finally, we modify the linear system to apply the boundary
     // conditions. This replaces the equations for the boundary DoFs with
     // the corresponding u_i = 0 equations.
     MatrixTools::apply_boundary_values(
         boundary_values, system_matrix, solution, system_rhs, true);
   }
+
+    setup_time += time.wall_time();
 }
 
 void DTR::solve()
 {
   pcout << "===============================================" << std::endl;
 
+  Timer time;
+
   // Here we specify the maximum number of iterations of the iterative solver,
   // and its tolerance.
-  SolverControl solver_control(10000, 1e-6 * system_rhs.l2_norm());
+  SolverControl solver_control(10000, 1e-12 * system_rhs.l2_norm());
 
   // The linear solver is basically the same as in serial, in terms of
   // interface: we only have to use appropriate classes, compatible with
   // Trilinos linear algebra.
-  SolverCG<TrilinosWrappers::MPI::Vector> solver(solver_control);
+  SolverGMRES<TrilinosWrappers::MPI::Vector> solver(solver_control);
 
   TrilinosWrappers::PreconditionSSOR preconditioner;
   preconditioner.initialize(
     system_matrix, TrilinosWrappers::PreconditionSSOR::AdditionalData(1.0));
 
+  setup_time += time.wall_time();
+  time_details << Utilities::MPI::min_max_avg(setup_time, MPI_COMM_WORLD).avg << ',';
+
+  time.reset();
+  time.start();
+
   pcout << "  Solving the linear system" << std::endl;
   solver.solve(system_matrix, solution, system_rhs, preconditioner);
   pcout << "  " << solver_control.last_step() << " CG iterations" << std::endl;
+
+  time_details /*<< "solve time"*/ << Utilities::MPI::min_max_avg(time.wall_time(), MPI_COMM_WORLD).avg << std::endl;
+
 }
 
 void DTR::output() const
@@ -386,8 +392,8 @@ void DTR::output() const
 double
 DTR::compute_error(const VectorTools::NormType &norm_type) const
 {
-  FE_SimplexP<dim> fe_linear(1);
-  MappingFE mapping(fe_linear);
+  FE_Q<dim> fe_linear(1);
+  //MappingFE mapping(fe_linear);
 
   // The error is an integral, and we approximate that integral using a
   // quadrature formula. To make sure we are accurate enough, we use a
@@ -396,7 +402,7 @@ DTR::compute_error(const VectorTools::NormType &norm_type) const
 
   // First we compute the norm on each element, and store it in a vector.
   Vector<double> error_per_cell(mesh.n_active_cells());
-  VectorTools::integrate_difference(mapping,
+  VectorTools::integrate_difference(MappingQ1<dim>(),
                                     dof_handler,
                                     solution,
                                     ExactSolution(),
