@@ -9,9 +9,13 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
 
-#include <deal.II/fe/fe_simplex_p.h>
+/*#include <deal.II/fe/fe_simplex_p.h>
 #include <deal.II/fe/fe_values.h>
-#include <deal.II/fe/mapping_fe.h>
+#include <deal.II/fe/mapping_fe.h>*/
+
+#include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_values.h>
+#include <deal.II/fe/mapping_q1.h>
 
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_in.h>
@@ -30,6 +34,8 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
+#include <deal.II/base/timer.h>
+
 
 #include <filesystem>
 #include <fstream>
@@ -188,18 +194,29 @@ public:
   };
 
   // Constructor.
-  DTR(const std::string &mesh_file_name_, const unsigned int &r_)
-    : mesh_file_name(mesh_file_name_)
-    , r(r_)
+  DTR(const unsigned int &r_, std::ofstream& dimension_time_file)
+    : r(r_)
     , mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
     , mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD))
     , mesh(MPI_COMM_WORLD)
-    , pcout(std::cout, mpi_rank == 0)
+    , pcout(std::cout, true && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    , time_details(dimension_time_file, true && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    , setup_time(0.)
+  {}
+
+  DTR(const unsigned int &r_)
+    : r(r_)
+    , mpi_size(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
+    , mpi_rank(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD))
+    , mesh(MPI_COMM_WORLD)
+    , pcout(std::cout, true && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    , time_details(std::cout, false && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    , setup_time(0.)
   {}
 
   // Initialization.
   void
-  setup();
+  setup(unsigned int n_initial_refinements = 8);
 
   // System assembly.
   void
@@ -281,10 +298,13 @@ protected:
 
   // Parallel output stream.
   ConditionalOStream pcout;
+  ConditionalOStream time_details;
+
 
   // DoFs owned by current process.
   IndexSet locally_owned_dofs;
 
+  double setup_time;
 };
 
 #endif

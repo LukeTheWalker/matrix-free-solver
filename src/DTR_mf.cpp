@@ -129,7 +129,7 @@ namespace DTR_mf
     {
       Assert(inverse_diagonal.local_element(i) > 0.,
              ExcMessage("No diagonal entry in a positive definite operator should be zero"));
-      inverse_diagonal.local_element(i) = 1. / inverse_diagonal.local_element(i);
+      inverse_diagonal.local_element(i) = number(1.) / number(inverse_diagonal.local_element(i));
     }
   }
 
@@ -192,8 +192,8 @@ namespace DTR_mf
   //    conform to the 2:1 cell balance over vertices, which is needed for the
   //    convergence of the geometric multigrid routines.
   // - For the distributed grid we need to specifically enable the multigrid hierarchy
-  template <int dim>
-  DTRProblem<dim>::DTRProblem(bool verbose)
+  template <int dim, int degree_finite_element>
+  DTRProblem<dim, degree_finite_element>::DTRProblem(bool verbose)
 #ifdef DEAL_II_WITH_P4EST
       : triangulation(MPI_COMM_WORLD,
                       Triangulation<dim>::limit_level_difference_at_vertices,
@@ -212,8 +212,27 @@ namespace DTR_mf
   {
   }
 
-  template <int dim>
-  void DTRProblem<dim>::setup_system()
+  template <int dim, int degree_finite_element>
+  DTRProblem<dim, degree_finite_element>::DTRProblem(std::ofstream& dimension_time_file, bool verbose)
+#ifdef DEAL_II_WITH_P4EST
+      : triangulation(MPI_COMM_WORLD,
+                      Triangulation<dim>::limit_level_difference_at_vertices,
+                      parallel::distributed::Triangulation<
+                          dim>::construct_multigrid_hierarchy)
+#else
+      : triangulation(Triangulation<dim>::limit_level_difference_at_vertices)
+#endif
+        ,
+        fe(degree_finite_element),
+        dof_handler(triangulation),
+        setup_time(0.),
+        pcout(std::cout, verbose && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
+        time_details(dimension_time_file, true && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  {
+  }
+
+  template <int dim, int degree_finite_element>
+  void DTRProblem<dim, degree_finite_element>::setup_system()
   {
     Timer time;
     setup_time = 0;
@@ -227,6 +246,7 @@ namespace DTR_mf
     pcout << "Finite element degree:        " << fe.degree << std::endl;
     pcout << "Number of cells:              " << triangulation.n_active_cells() << std::endl;
     pcout << "Number of DoFs per cell:      " << fe.dofs_per_cell << std::endl;
+    time_details << dof_handler.n_dofs() << ",";
     pcout << "Number of DoFs:               " << dof_handler.n_dofs() << std::endl;
 
     // Consider only locally relevant dofs otherwise memory will explode
@@ -252,8 +272,7 @@ namespace DTR_mf
     constraints.close();
 
     setup_time += time.wall_time();
-    time_details << "Distribute DoFs & B.C.     (CPU/wall) " << time.cpu_time()
-                 << "s/" << time.wall_time() << 's' << std::endl;
+    //time_details /*<< "Distribute DoFs & B.C."*/ << time.wall_time() << 's';
     time.restart();
 
     // Setup the matrix-free instance of the problem and store it in a shared pointer
@@ -291,8 +310,7 @@ namespace DTR_mf
     system_matrix.initialize_dof_vector(system_rhs);
 
     setup_time += time.wall_time();
-    time_details << "Setup matrix-free system   (CPU/wall) " << time.cpu_time()
-                 << "s/" << time.wall_time() << 's' << std::endl;
+    //time_details /*<< "Setup matrix-free system"*/ << time.wall_time() << 's';
     time.restart();
 
     // Initialize the matrices for the multigrid method on all the levels
@@ -346,13 +364,12 @@ namespace DTR_mf
                                                ForcingTerm<dim>());
     }
     setup_time += time.wall_time();
-    time_details << "Setup matrix-free levels   (CPU/wall) " << time.cpu_time()
-                 << "s/" << time.wall_time() << 's' << std::endl;
+    //time_details /*<< "Setup matrix-free levels"*/ << time.wall_time() << 's';
   }
 
   // Assemble rhs and handle the inhomogeneous Dirichlet constraints
-  template <int dim>
-  void DTRProblem<dim>::assemble_rhs()
+  template <int dim, int degree_finite_element>
+  void DTRProblem<dim, degree_finite_element>::assemble_rhs()
   {
     Timer time;
 
@@ -438,20 +455,19 @@ namespace DTR_mf
     system_rhs.compress(VectorOperation::add);
 
     setup_time += time.wall_time();
-    time_details << "Assemble right hand side   (CPU/wall) " << time.cpu_time()
+    pcout << "Assemble right hand side   (CPU/wall) " << time.cpu_time()
                  << "s/" << time.wall_time() << 's' << std::endl;
   }
 
-  template <int dim>
-  void DTRProblem<dim>::solve()
+  template <int dim, int degree_finite_element>
+  void DTRProblem<dim, degree_finite_element>::solve()
   {
     Timer time;
     // Start with the setup of the transfer using MGTransferMatrixFree that does the interpolation
     MGTransferMatrixFree<dim, float> mg_transfer(mg_constrained_dofs);
     mg_transfer.build(dof_handler);
     setup_time += time.wall_time();
-    time_details << "MG build transfer time     (CPU/wall) " << time.cpu_time()
-                 << "s/" << time.wall_time() << "s\n";
+    //time_details /*<< "MG build transfer time"*/ << time.wall_time() << "s";
     time.restart();
 
     // Setup the Chebyshev iteration smoother
@@ -508,8 +524,13 @@ namespace DTR_mf
         preconditioner(dof_handler, mg, mg_transfer);
 
     // Setup the solver
-    SolverControl solver_control(100, 1e-12 * system_rhs.l2_norm());
+    SolverControl solver_control(1000, 1e-12 * system_rhs.l2_norm());
     SolverCG<LinearAlgebra::distributed::Vector<double>> solver(solver_control);
+    setup_time += time.wall_time();
+    //time_details */<< "MG build smoother time"*/ << time.wall_time() << "s";
+    pcout << "Total setup time               (wall) " << setup_time << "s\n";
+    time_details /*<< "Setup time"*/ <<Utilities::MPI::min_max_avg(setup_time, MPI_COMM_WORLD).avg << ",";
+
 
     time.reset();
     time.start();
@@ -533,10 +554,12 @@ namespace DTR_mf
     pcout << "Time solve (" << solver_control.last_step() << " iterations)"
           << (solver_control.last_step() < 10 ? "  " : " ") << "(CPU/wall) "
           << time.cpu_time() << "s/" << time.wall_time() << "s\n";
+    time_details /*<< "solve time"*/ << Utilities::MPI::min_max_avg(time.wall_time(), MPI_COMM_WORLD).avg << ",";
+    time_details /*<< "iterations"*/ << solver_control.last_step() << std::endl;
   }
 
-  template <int dim>
-  void DTRProblem<dim>::output_results(const unsigned int cycle) const
+  template <int dim, int degree_finite_element>
+  void DTRProblem<dim, degree_finite_element>::output_results(const unsigned int cycle) const
   {
     Timer time;
 
@@ -557,12 +580,11 @@ namespace DTR_mf
     data_out.write_vtu_with_pvtu_record(
         output_dir, "solution", cycle, MPI_COMM_WORLD, 3);
 
-    time_details << "Time write output          (CPU/wall) " << time.cpu_time()
-                 << "s/" << time.wall_time() << "s\n";
+    //time_details /*<< "Time write output"*/ << time.wall_time() << "s";
   }
 
-  template <int dim>
-  void DTRProblem<dim>::run(unsigned int n_initial_refinements, unsigned int n_cycles)
+  template <int dim, int degree_finite_element>
+  void DTRProblem<dim, degree_finite_element>::run(unsigned int n_initial_refinements, unsigned int n_cycles)
   {
     // Print processor vectorization, MPI and multi-threading details
     {
@@ -606,8 +628,8 @@ namespace DTR_mf
     };
   }
 
-  template <int dim>
-  double DTRProblem<dim>::compute_error(const VectorTools::NormType &norm_type) const
+  template <int dim, int degree_finite_element>
+  double DTRProblem<dim, degree_finite_element>::compute_error(const VectorTools::NormType &norm_type) const
   {
     solution.update_ghost_values();
     // First we compute the norm on each element, and store it in a vector.
