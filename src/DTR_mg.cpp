@@ -348,10 +348,10 @@ namespace DTR_mg
     mg_transfer.build(dof_handler);
 
     SolverControl coarse_solver_control(50000, 1e-12, false, false);
-    SolverCG<VectorType> coarse_solver(coarse_solver_control);
+    SolverGMRES<VectorType> coarse_solver(coarse_solver_control);
     PreconditionIdentity identity;
     MGCoarseGridIterativeSolver<VectorType,
-                                SolverCG<VectorType>,
+                                SolverGMRES<VectorType>,
                                 MatrixType,
                                 PreconditionIdentity>
         coarse_grid_solver(coarse_solver, mg_matrix[0], identity);
@@ -375,7 +375,7 @@ namespace DTR_mg
 
     solution = 0.;
 
-    SolverCG<VectorType> solver(solver_control);
+    SolverGMRES<VectorType> solver(solver_control);
 
     setup_time += time.wall_time();
     pcout << "Total setup time               (wall) " << setup_time << "s\n";
@@ -389,7 +389,6 @@ namespace DTR_mg
                    solution,
                    right_hand_side,
                    preconditioner);
-    
 
     constraints.distribute(solution);
 
