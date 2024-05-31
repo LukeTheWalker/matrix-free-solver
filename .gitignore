@@ -4,3 +4,5 @@ mesh
 .DS_Store
 step37
 docs/html
+outputs*
+plots
