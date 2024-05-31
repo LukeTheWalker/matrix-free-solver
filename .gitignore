@@ -3,3 +3,5 @@ mesh
 .vscode
 .DS_Store
 step37
+outputs*
+plots
