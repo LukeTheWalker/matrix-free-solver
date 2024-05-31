@@ -1,0 +1,8 @@
+var searchData=
+[
+  ['fe_0',['fe',['../classDTR.html#a5882e36a2085ce91388d7ba4f710b050',1,'DTR']]],
+  ['for_20the_20advection_20diffusion_20reaction_20problem_1',['for the Advection Diffusion Reaction problem',['../md__2home_2luca_2Development_2NAPDE_2matrix-free-solver_2README.html',1,'Matrix-free solver for the Advection-Diffusion-Reaction problem'],['../md__2home_2luca_2Development_2NAPDE_2tmp_2matrix-free-solver_2README.html',1,'Matrix-free solver for the Advection-Diffusion-Reaction problem']]],
+  ['forcing_5fterm_2',['forcing_term',['../classDTR.html#ad5095a425202e22b5bd0f5e6bde6a015',1,'DTR::forcing_term'],['../classDTR.html#a7c16a8590133ba676d9542c5beb493e6',1,'DTR::forcing_term']]],
+  ['forcingterm_3',['ForcingTerm',['../classDTR_1_1ForcingTerm.html',1,'DTR::ForcingTerm'],['../classDTR__mf_1_1ForcingTerm.html',1,'DTR_mf::ForcingTerm&lt; dim &gt;'],['../classDTR__mg_1_1DTRProblem_1_1ForcingTerm.html',1,'DTR_mg::DTRProblem&lt; dim &gt;::ForcingTerm'],['../classproblem__data_1_1ForcingTerm.html',1,'problem_data::ForcingTerm&lt; dim &gt;'],['../classDTR_1_1ForcingTerm.html#a11d221fb5fee0994f264bc9dbc4016f1',1,'DTR::ForcingTerm::ForcingTerm()']]],
+  ['free_20solver_20for_20the_20advection_20diffusion_20reaction_20problem_4',['free solver for the Advection Diffusion Reaction problem',['../md__2home_2luca_2Development_2NAPDE_2matrix-free-solver_2README.html',1,'Matrix-free solver for the Advection-Diffusion-Reaction problem'],['../md__2home_2luca_2Development_2NAPDE_2tmp_2matrix-free-solver_2README.html',1,'Matrix-free solver for the Advection-Diffusion-Reaction problem']]]
+];

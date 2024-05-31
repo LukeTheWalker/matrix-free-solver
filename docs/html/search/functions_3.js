@@ -1,0 +1,4 @@
+var searchData=
+[
+  ['evaluate_5fcoefficients_0',['evaluate_coefficients',['../classDTR__mf_1_1DTROperation.html#ac72834720b769d7c98b6a614c1d4d827',1,'DTR_mf::DTROperation::evaluate_coefficients(const problem_data::DiffusionCoefficient&lt; dim &gt; &amp;diffusion_function, const problem_data::TransportCoefficient&lt; dim &gt; &amp;transport_function, const problem_data::ReactionCoefficient&lt; dim &gt; &amp;reaction_function, const problem_data::ForcingTerm&lt; dim &gt; &amp;forcing_term_function)'],['../classDTR__mf_1_1DTROperation.html#a7429e897e6b68c99138694a3b06592e2',1,'DTR_mf::DTROperation::evaluate_coefficients(const DiffusionCoefficient&lt; dim &gt; &amp;diffusion_function, const TransportCoefficient&lt; dim &gt; &amp;transport_function, const ReactionCoefficient&lt; dim &gt; &amp;reaction_function, const ForcingTerm&lt; dim &gt; &amp;forcing_term_function)']]]
+];

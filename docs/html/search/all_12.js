@@ -1,0 +1,9 @@
+var searchData=
+[
+  ['tensor_5fvalue_0',['tensor_value',['../classproblem__data_1_1TransportCoefficient.html#a1c4f6a5dbc78355bd862f9a99e00455d',1,'problem_data::TransportCoefficient::tensor_value()'],['../classDTR__mf_1_1TransportCoefficient.html#acc698d26d15a0a102ff71b399507d60b',1,'DTR_mf::TransportCoefficient::tensor_value()']]],
+  ['tests_1',['tests',['../md__2home_2luca_2Development_2NAPDE_2matrix-free-solver_2README.html#autotoc_md3',1,'Available tests'],['../md__2home_2luca_2Development_2NAPDE_2tmp_2matrix-free-solver_2README.html#autotoc_md7',1,'Available tests']]],
+  ['the_20advection_20diffusion_20reaction_20problem_2',['the Advection Diffusion Reaction problem',['../md__2home_2luca_2Development_2NAPDE_2matrix-free-solver_2README.html',1,'Matrix-free solver for the Advection-Diffusion-Reaction problem'],['../md__2home_2luca_2Development_2NAPDE_2tmp_2matrix-free-solver_2README.html',1,'Matrix-free solver for the Advection-Diffusion-Reaction problem']]],
+  ['time_5fdetails_3',['time_details',['../classDTR.html#a028261c28031b1a4a1b9b7b663c73dad',1,'DTR']]],
+  ['transport_5fcoefficient_4',['transport_coefficient',['../classDTR.html#a8491c9ccdd83e841f642c61aed2beec8',1,'DTR::transport_coefficient'],['../classDTR.html#affeea405548c3cdf073fbd5d01160b23',1,'DTR::transport_coefficient']]],
+  ['transportcoefficient_5',['TransportCoefficient',['../classDTR_1_1TransportCoefficient.html',1,'DTR::TransportCoefficient'],['../classDTR__mf_1_1TransportCoefficient.html',1,'DTR_mf::TransportCoefficient&lt; dim &gt;'],['../classDTR__mg_1_1DTRProblem_1_1TransportCoefficient.html',1,'DTR_mg::DTRProblem&lt; dim &gt;::TransportCoefficient'],['../classproblem__data_1_1TransportCoefficient.html',1,'problem_data::TransportCoefficient&lt; dim &gt;'],['../classDTR_1_1TransportCoefficient.html#abf16991896cfa482fd7c1d35bbd15ef6',1,'DTR::TransportCoefficient::TransportCoefficient()']]]
+];

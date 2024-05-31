@@ -1,0 +1,6 @@
+var searchData=
+[
+  ['setup_0',['setup',['../classDTR.html#a98851977241dc264418ff46934699c6c',1,'DTR::setup(unsigned int n_initial_refinements=8)'],['../classDTR.html#a98851977241dc264418ff46934699c6c',1,'DTR::setup(unsigned int n_initial_refinements=8)']]],
+  ['solve_1',['solve',['../classDTR.html#adf30acb4b7b0ea518110ae2b03fd8b27',1,'DTR::solve()'],['../classDTR.html#adf30acb4b7b0ea518110ae2b03fd8b27',1,'DTR::solve()']]],
+  ['solve_5fproblem_2',['solve_problem',['../matrix-free-solver_2src_2main_8cpp.html#af4856908d41652e3d948abcc94151732',1,'solve_problem():&#160;main.cpp'],['../matrix-free-solver_2src_2main__mf_8cpp.html#a4dce69492e1b03f874980e77dfb9fd23',1,'solve_problem(unsigned int initial_refinements=5):&#160;main_mf.cpp'],['../matrix-free-solver_2src_2main__mg_8cpp.html#a4dce69492e1b03f874980e77dfb9fd23',1,'solve_problem(unsigned int initial_refinements=5):&#160;main_mg.cpp'],['../tmp_2matrix-free-solver_2src_2main_8cpp.html#af4856908d41652e3d948abcc94151732',1,'solve_problem():&#160;main.cpp'],['../tmp_2matrix-free-solver_2src_2main__mf_8cpp.html#a4dce69492e1b03f874980e77dfb9fd23',1,'solve_problem(unsigned int initial_refinements=5):&#160;main_mf.cpp'],['../tmp_2matrix-free-solver_2src_2main__mg_8cpp.html#a4dce69492e1b03f874980e77dfb9fd23',1,'solve_problem(unsigned int initial_refinements=5):&#160;main_mg.cpp']]]
+];
