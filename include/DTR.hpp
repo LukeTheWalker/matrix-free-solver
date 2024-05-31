@@ -32,7 +32,6 @@
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/base/timer.h>
 
-
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -94,52 +93,92 @@ public:
    */
   void setup(unsigned int n_initial_refinements = 8);
 
-  /// @brief System assembly.
+  /**
+   * @brief Assembly of the system matrix and right-hand side vector.
+   */
   void assemble();
 
-  /// @brief System solution.
+  /**
+   * @brief Solution of the linear system.
+   */
   void solve();
 
-  /// @brief Output.
+  /**
+   * @brief Output of the solution to a file.
+   *
+   * This function writes the solution to a VTK file for visualization.
+   */
   void output() const;
 
   /**
-   * @brief Compute the error.
-   * 
-   * @param norm_type Norm type.
-   * @return double Computed error.
+   * @brief Compute the error of the solution.
+   *
+   * This function computes the error of the numerical solution with respect to an exact solution.
+   *
+   * @param norm_type The type of norm to use for error computation.
+   * @return The computed error.
    */
   double compute_error(const VectorTools::NormType &norm_type) const;
 
 protected:
-  /// @brief Path to the mesh file.
+  /** 
+   * @brief Path to the mesh file.
+   */
   const std::string mesh_file_name;
 
-  /// @brief Polynomial degree.
+  /**
+   * @brief Polynomial degree.
+   */
   const unsigned int r;
 
-  /// @brief Number of MPI processes.
+  /**
+   * @brief Number of MPI processes.
+   */
   const unsigned int mpi_size;
 
-  /// @brief This MPI process.
+  /**
+   * @brief Rank of this MPI process.
+   */
   const unsigned int mpi_rank;
 
-  /// @brief Diffusion coefficient.
+  /**
+   * @brief Diffusion coefficient.
+   */
   problem_data::DiffusionCoefficient<dim> diffusion_coefficient;
 
-  /// @brief Reaction coefficient.
+  /**
+   * @brief Reaction coefficient.
+   */
   problem_data::ReactionCoefficient<dim> reaction_coefficient;
 
-  /// @brief Transport coefficient.
+  /**
+   * @brief Transport coefficient.
+   */
   problem_data::TransportCoefficient<dim> transport_coefficient;
 
-  /// @brief Forcing term.
+  /**
+   * @brief Forcing term.
+   */
   problem_data::ForcingTerm<dim> forcing_term;
 
-  /// @brief boundary conditions.
+  /**
+   * @brief Dirichlet boundary conditions for the left and bottom boundaries.
+   */
   problem_data::DirichletBC1<dim> dirichletBC1;
+
+  /**
+   * @brief Dirichlet boundary conditions for the right and top boundaries.
+   */
   problem_data::DirichletBC2<dim> dirichletBC2;
+
+  /**
+   * @brief Neumann boundary conditions for the right and top boundaries.
+   */
   problem_data::NeumannBC1<dim> neumannBC1;
+
+  /**
+   * @brief Neumann boundary conditions for the left and bottom boundaries.
+   */
   problem_data::NeumannBC2<dim> neumannBC2;
 
   /**
