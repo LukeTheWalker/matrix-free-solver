@@ -1,10 +1,12 @@
 # Script that plots the data from the csv files and saves them as png files
+import random
 import re
 import sys
 import os
 from os import path
 from glob import glob
 
+import matplotlib
 from matplotlib.lines import Line2D
 import pandas as pd
 import numpy as np
@@ -41,14 +43,18 @@ if not os.path.exists(os.path.join(".", "plots")):
 # Name of the output directories as out + put for put in put_types
 out = "output_"
 put_types = ("mf", "mb", "mg")
+load_put_types = put_types + ("mf_threads", "mf_double")
+marks = {"mf": 'o', "mb": '^', "mg": 'x', "mf_threads": '^', "mf_double": '^'}
 
+# Set the style of the plots
+plt.rcParams.update({'font.size': 12})
 
 # Collection of dfs
 df_dim = {}
 df_poly = {}
 
 # Load the data from the csv files
-for put in put_types:
+for put in load_put_types:
 	## Dimension time data
 	file_list = glob(path.join(basepath, out + put, "dimension_time_*.csv"))
 	print("Analyzing", put, "files for dimension:")
@@ -71,6 +77,7 @@ for put in put_types:
 
 	print(df_dim[put].info())
 
+for put in put_types:
 	## Polynomial degree data
 	file = glob(path.join(basepath, out + put, "polynomial_degree_*.csv"))[0]
 	print("Analyzing", put, "file for polynomial:")
@@ -101,19 +108,22 @@ if "strongcomp" in sys.argv[1]:
 				df1 = df[df['n_dofs'] == dof_value]
 				# Compose the label
 				lab = put + " (" + str(round(dof_value/1e6, 1)) + "M DoFs)"
-				ax.plot(df1['proc'], df1[time_type], label=lab, marker='o', linestyle='-.')
+				ax.plot(df1['proc'], df1[time_type], label=lab, marker=marks[put], linestyle='-.', linewidth=2.5, markersize=8)
 
 		#Plot ideal scaling
 		proc = df['proc']
 		solve = df[time_type]
 		ax.plot(proc, 1e2 / proc, label="Ideal scaling", linestyle='--', color='black')
+
 		ax.set_xlabel("Number of processors")
 		ax.set_ylabel(time_type + " time (s)")
 		ax.set_yscale('log')
+		ax.set_xscale('log')
 		ax.grid(True, which="both", ls="--")
 		ax.set_xticks(df['proc'].unique())
+		ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 		ax.set_title("Strong scaling for " + time_type + " time for all the solvers")
-		ax.legend()
+		ax.legend(loc="upper right", fontsize='small', fancybox=True, framealpha=0.5)
 		plt.savefig(os.path.join(".", "plots", "strongcomp_" + time_type + ".png"))
 		print("Strong scaling plot saved in", os.path.join(".", "plots", "strongcomp_" + time_type + ".png"))
 
@@ -135,7 +145,7 @@ if "strongsingle" in sys.argv[1]:
 				df1 = df[df['n_dofs'] == dof_value]
 				# Compose the label
 				lab = put + " (" + str(round(dof_value/1e6, 2)) + "M DoFs)"
-				ax.plot(df1['proc'], df1[time_type], label=lab, marker='o', linestyle='-.')
+				ax.plot(df1['proc'], df1[time_type], label=lab, marker=marks[put], linestyle='-.', linewidth=2.5, markersize=8)
 
 			#Plot ideal scaling
 			proc = df['proc']
@@ -146,10 +156,12 @@ if "strongsingle" in sys.argv[1]:
 			ax.set_xlabel("Number of processors")
 			ax.set_ylabel(time_type + " time (s)")
 			ax.set_yscale('log')
+			ax.set_xscale('log')
 			ax.grid(True, which="both", ls="--")
 			ax.set_xticks(df['proc'].unique())
+			ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
 			ax.set_title("Strong scaling of " + time_type + " time for " + put)
-			ax.legend(loc='upper right')
+			ax.legend(loc="upper right", fontsize='small', fancybox=True, framealpha=0.5)
 			plt.savefig(os.path.join(".", "plots", "strong_" + put + "_" + time_type + ".png"))
 			print("Strong scaling plot saved in", os.path.join(".", "plots", "strong_" + put + "_" + time_type + ".png"))
 
@@ -162,13 +174,13 @@ if "polynomial" in sys.argv[1]:
 		fig, ax = plt.subplots()
 		for put in put_types:
 			df = df_poly[put]
-			ax.plot(df['degree'], 1e-6 * df['dofs'] / df[time_type], label=put, marker='o', linestyle='-.')
+			ax.plot(df['degree'], 1e-6 * df['dofs'] / df[time_type], label=put, marker=marks[put], linestyle='-.', linewidth=2.5, markersize=8)
 		ax.set_ylabel(time_type + " MDofs/s")
 		ax.set_xlabel("Polynomial degree")
 		ax.set_xticks(df['degree'].unique())
 		ax.grid(True, which="both", ls="--")
 		ax.set_title("Polynomial degree performance for " + time_type)
-		ax.legend()
+		ax.legend(loc="upper right", fontsize='small', fancybox=True, framealpha=0.5)
 		plt.savefig(os.path.join(".", "plots", "polynomial_" + time_type + ".png"))
 		print("Polynomial plot saved in", os.path.join(".", "plots", "polynomial_" + time_type + ".png"))
 
@@ -188,26 +200,59 @@ if "time" in sys.argv[1]:
 				df1 = df[df['proc'] == proc_value]
 				# Compose the label
 				lab = put + " (" + str(proc_value) + " procs)"
-				ax.plot(df1['n_dofs'], df1[time_type], label=lab, marker='o', linestyle='-.')
+				ax.plot(df1['n_dofs'], df1[time_type], label=lab, marker=marks[put], linestyle='-.', linewidth=2.5, markersize=8)
 
 		# Add reference
-		ax.plot(df1['n_dofs'], 1e-5*df1['n_dofs'], label="Linear", linestyle='--', color='black')
-		ax.plot(df1['n_dofs'], 1e-7*df1['n_dofs']**2, label="Quadratic", linestyle='--', color='blue')
+		dofs = df_dim['mf']['n_dofs']
+		ax.plot(dofs, 1e-7*dofs, label="Linear", linestyle='--', linewidth=0.8, color='black')
+		dofs = df_dim['mb']['n_dofs']
+		dofs = dofs.loc[dofs > 1e3]
+		ax.plot(dofs, 1e-9*dofs**2, label="Quadratic", linestyle='--', linewidth=0.8, color='blue')
 		ax.set_xlabel("Number of DoFs")
 		ax.set_ylabel(time_type + " time (s)")
 		ax.set_yscale('log')
 		ax.set_xscale('log')
 		ax.grid(True, which="both", ls="--")
 		ax.set_title(time_type + " time for all solvers")
-		ax.legend()
+		ax.legend(loc="upper left", fontsize='small', fancybox=True, framealpha=0.5)
 		plt.savefig(os.path.join(".", "plots", "time_" + time_type + ".png"))
 		print("Time plot saved in", os.path.join(".", "plots", "time_" + time_type + ".png"))
+
+# ====== Plot for thread mf comparison ======
+#	!!! must load in the output the correct mf data with threading
+if "threads" in sys.argv[1]:
+	print("Plotting time study for threads in mf")
+	for time_type in ("solve", "setup+assemble", "total"):
+		fig, ax = plt.subplots()
+		put = "mf_threads"
+		df = df_dim[put]
+		# Sort the data by the number of processes
+		df = df.sort_values(by=['n_dofs', 'proc'])
+		# Get the largest two values of n_dofs and plot them
+		for proc_value in df['proc'].drop_duplicates().tolist():
+			df1 = df[df['proc'] == proc_value]
+			# Compose the label
+			lab = put + " (" + str(proc_value) + " procs)"
+			ax.plot(df1['n_dofs'], df1[time_type], label=lab, marker=marks[put], linestyle='-.', linewidth=2.5, markersize=8)
+
+		# Add reference
+		ax.plot(df1['n_dofs'], 1e-6*df1['n_dofs'], label="Linear", linestyle='--', color='black')
+		ax.plot(df1['n_dofs'], 1e-7*df1['n_dofs'], linestyle='--', color='black')
+		ax.set_xlabel("Number of DoFs")
+		ax.set_ylabel(time_type + " time (s)")
+		ax.set_yscale('log')
+		ax.set_xscale('log')
+		ax.grid(True, which="both", ls="--")
+		ax.set_title(time_type + " time for mf redistributing threads and processes")
+		ax.legend(loc="upper left", fontsize='small', fancybox=True, framealpha=0.5)
+		plt.savefig(os.path.join(".", "plots", "threads_" + time_type + ".png"))
+		print("Time plot saved in", os.path.join(".", "plots", "threads_" + time_type + ".png"))
 
 
 # ====== Plot for speedup ======
 #	Plot the solve speedup for mf with respect to mg in function of dofs number
 if "speedup" in sys.argv[1]:
-	print("Plotting solve speedup for mf with respect to mg in function of dofs")
+	print("Plotting time speedup for mf with respect to mg in function of dofs")
 	fig, ax = plt.subplots()
 	df_mf = df_dim["mf"]
 	df_mg = df_dim["mg"]
@@ -216,23 +261,76 @@ if "speedup" in sys.argv[1]:
 	for proc_value in (8, 16, 32):
 		df1_mf = df_mf[df_mf['proc'] == proc_value]
 		df1_mg = df_mg[df_mg['proc'] == proc_value]
-		speedup = df1_mg['solve'] / df1_mf['solve']
-		ax.plot(df1_mf['n_dofs'], speedup, label=str(proc_value) + " procs", marker='o', linestyle='-.')
+		speedup = df1_mg['total'] / df1_mf['total']
+		ax.plot(df1_mf['n_dofs'], speedup, label=str(proc_value) + " procs", marker='o', linestyle='-.', linewidth=2.5, markersize=8)
 
 	ax.plot(df1_mf['n_dofs'], np.log(df1_mf['n_dofs']) - 8, label="Log speedup", linestyle='--', color='black')
 	ax.set_xlabel("Number of DoFs")
 	ax.set_ylabel("Speedup")
 	ax.set_xscale('log')
 	ax.grid(True, which="both", ls="--")
-	ax.set_title("Solve speedup for mf with respect to mg")
-	ax.legend()
+	ax.set_title("Total time speedup for mf with respect to mg")
+	ax.legend(loc="upper right", fontsize='small', fancybox=True, framealpha=0.5)
 	plt.savefig(os.path.join(".", "plots", "speedup_mf_mg.png"))
 	print("Speedup plot saved in", os.path.join(".", "plots", "speedup_mf_mg.png"))
 
+# ====== Plot for parallel speedup ======
+if "parallel" in sys.argv[1]:
+	print("Plotting parallel speedup for all solvers")
+	for time_type in ("solve", "setup+assemble", "total"):
+		fig, ax = plt.subplots()
+		for put in ('mf','mg'):
+			df = df_dim[put]
+			# Sort the data by the number of processes
+			df = df.sort_values(by='proc')
+			# Get the largest two values of n_dofs and plot them
+			for dof_value in df['n_dofs'].drop_duplicates().nlargest(2).tolist():
+				df1 = df[df['n_dofs'] == dof_value]
+				# Compose the label
+				lab = put + " (" + str(round(dof_value/1e6, 1)) + "M DoFs)"
+				speedup = df['proc'].min() * df1[time_type].max() / df1[time_type]
+				ax.plot(df1['proc'], speedup, label=lab, marker=marks[put], linestyle='-.', linewidth=2.5, markersize=8)
 
+		# Plot the ideal speedup
+		proc = df['proc']
+		ax.plot(proc, proc, label="Ideal speedup", linestyle='--', color='black')
+		ax.set_xlabel("Number of processors")
+		ax.set_ylabel("Speedup")
+		ax.set_xscale('log')
+		ax.set_yscale('log')
+		ax.grid(True, which="both", ls="--")
+		ax.set_xticks(df['proc'].unique())
+		ax.get_xaxis().set_major_formatter(matplotlib.ticker.ScalarFormatter())
+		ax.set_title("Parallel speedup for " + time_type + " time for all the solvers")
+		ax.legend(loc="upper left", fontsize='small', fancybox=True, framealpha=0.5)
+		plt.savefig(os.path.join(".", "plots", "parallelspeedup_" + time_type + ".png"))
+		print("Parallel speedup plot saved in", os.path.join(".", "plots", "parallelspeedup_" + time_type + ".png"))
+
+# ====== Plot for double ======
+#	Plot the total speedup for mf with double and with double precision
+if "double" in sys.argv[1]:
+	print("Plotting time speedup for mf with double and mixed precision in function of dofs")
+	for time_type in ("solve", "total"):
+		fig, ax = plt.subplots()
+		df_mf = df_dim["mf"].sort_values(by='n_dofs')
+		df_mf_double = df_dim["mf_double"].sort_values(by='n_dofs')
+		for proc_value in (2, 4, 8, 12, 16, 32):
+			df1_mf = df_mf[df_mf['proc'] == proc_value]
+			df1_mf_double = df_mf_double[df_mf_double['proc'] == proc_value]
+			speedup = df1_mf_double[time_type] / df1_mf[time_type]
+			ax.plot(df1_mf['n_dofs'], speedup, label=str(proc_value) + " procs", marker='o', linestyle='-.', linewidth=2.5, markersize=8)
+
+		ax.set_xlabel("Number of DoFs")
+		ax.set_ylabel("Speedup")
+		ax.set_xscale('log')
+		ax.grid(True, which="both", ls="--")
+		ax.set_title(time_type + " time speedup for mixed over double-only precision mf")
+		ax.legend(loc="upper right", fontsize='small', fancybox=True, framealpha=0.5)
+		plt.savefig(os.path.join(".", "plots", "speedup_double_" + time_type + ".png"))
+		print("Speedup plot saved in", os.path.join(".", "plots", "speedup_double_" + time_type + ".png"))
 
 # ====== If the plot type is not recognized ======
-if all(s not in sys.argv[1] for s in ("strongcomp", "strongsingle", "polynomial", "speedup", "time")):
+if all(s not in sys.argv[1] for s in ("strongcomp", "strongsingle", "polynomial", "speedup", "time", "threads" ,"parallel", "double")):
 	print("Plot type not supported!!!!!")
 	print("Run without arguments to see the usage")
 	exit()

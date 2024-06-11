@@ -83,7 +83,7 @@ void solve_problem(unsigned int initial_refinements)
   const unsigned int degree = 2;
 
   DTRProblem<2> problem(degree);
-  problem.run(initial_refinements);
+  problem.run(initial_refinements, 3);
 }
 
 void dimension_time_study()

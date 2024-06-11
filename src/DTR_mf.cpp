@@ -281,7 +281,7 @@ namespace DTR_mf
     {
       typename MatrixFree<dim, double>::AdditionalData additional_data;
       // Enable also multithreading parallelism
-      additional_data.tasks_parallel_scheme = MatrixFree<dim, double>::AdditionalData::partition_color;
+      additional_data.tasks_parallel_scheme = MatrixFree<dim, double>::AdditionalData::none;
       // Define the flags for the needed storage
       additional_data.mapping_update_flags =
           (update_values | update_gradients | update_JxW_values | update_quadrature_points);
@@ -341,7 +341,7 @@ namespace DTR_mf
 
       typename MatrixFree<dim, float>::AdditionalData additional_data;
       // Enable also multithreading parallelism
-      additional_data.tasks_parallel_scheme = MatrixFree<dim, float>::AdditionalData::partition_color;
+      additional_data.tasks_parallel_scheme = MatrixFree<dim, float>::AdditionalData::none;
       additional_data.mapping_update_flags =
           (update_values | update_gradients | update_JxW_values | update_quadrature_points);
       additional_data.mapping_update_flags_boundary_faces =

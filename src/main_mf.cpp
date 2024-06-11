@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 void solve_problem(unsigned int initial_refinements)
 {
   DTRProblem<dim> problem;
-  problem.run(initial_refinements);
+  problem.run(initial_refinements, 3);
 
   const double error_L2 = problem.compute_error(VectorTools::L2_norm);
   const double error_H1 = problem.compute_error(VectorTools::H1_norm);
